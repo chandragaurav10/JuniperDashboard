@@ -6,9 +6,22 @@ import plotly.express as px
 # GOOGLE SHEET URL
 # ==========================
 
-sheet_url = "https://docs.google.com/spreadsheets/d/1EhXIz-t7fSsQ_9S9AfKdAIxemz1pxqkN39ukkPyDidI/export?format=csv&gid=1917203120"
 
-df = pd.read_csv(sheet_url)
+
+import gspread
+import streamlit as st
+
+gc = gspread.service_account_from_dict(
+    st.secrets["gcp_service_account"]
+)
+
+sheet = gc.open("Juniper Project File")
+
+worksheet = sheet.worksheet("Sales Data Non-Air 2026")
+
+data = worksheet.get_all_records()
+
+df = pd.DataFrame(data)
 
 df.columns = df.columns.str.strip()
 
