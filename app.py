@@ -263,6 +263,7 @@ today_sale = filtered_df.loc[
     "Sale (€)"
 ].sum()
 
+
 # Timestamp of last data push today
 from datetime import datetime
 import pytz
