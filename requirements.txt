@@ -12,3 +12,4 @@ gspread
 google-auth
 selenium
 reportlab
+pytz
