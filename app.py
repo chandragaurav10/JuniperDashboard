@@ -265,14 +265,8 @@ today_sale = filtered_df.loc[
 
 # Timestamp of last data push today
 from datetime import datetime
-now = datetime.now()
-scheduler_time = now.replace(
-    minute=1,
-    second=0,
-    microsecond=0
-)
 
-last_updated = scheduler_time.strftime(
+last_updated = datetime.now().strftime(
     "%d %b %Y, %I:%M %p"
 )
 #last_updated = now.strftime("%d %b %Y, %I:%M %p")
