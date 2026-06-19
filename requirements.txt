@@ -13,3 +13,4 @@ google-auth
 selenium
 reportlab
 pytz
+matplotlib
