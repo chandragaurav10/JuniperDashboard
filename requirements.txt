@@ -5,3 +5,10 @@ plotly
 openpyxl
 gspread
 google-auth
+streamlit
+pandas
+plotly
+gspread
+google-auth
+selenium
+reportlab
