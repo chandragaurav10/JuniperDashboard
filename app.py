@@ -265,8 +265,11 @@ today_sale = filtered_df.loc[
 
 # Timestamp of last data push today
 from datetime import datetime
+import pytz
 
-last_updated = datetime.now().strftime(
+ist = pytz.timezone("Asia/Kolkata")
+
+last_updated = datetime.now(ist).strftime(
     "%d %b %Y, %I:%M %p"
 )
 #last_updated = now.strftime("%d %b %Y, %I:%M %p")
