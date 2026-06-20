@@ -1042,9 +1042,340 @@ st.plotly_chart(
     use_container_width=True
 )
 
+
+
 # ==========================
-# BRANCH WISE DETAIL
+# BRANCH PERFORMANCE MATRIX
 # ==========================
+
+st.markdown("## 🔥 Branch Performance Matrix")
+
+matrix_df = (
+    filtered_df.groupby(
+        ["Branch Name", "Month Number"]
+    )["Sale (€)"]
+    .sum()
+    .reset_index()
+)
+
+sales_pivot = matrix_df.pivot(
+    index="Branch Name",
+    columns="Month Number",
+    values="Sale (€)"
+).fillna(0)
+
+sales_pivot = sales_pivot.reindex(
+    columns=range(1,13),
+    fill_value=0
+)
+
+report_df = pd.DataFrame(
+    index=sales_pivot.index
+)
+
+month_names = {
+    1:"Jan",
+    2:"Feb",
+    3:"Mar",
+    4:"Apr",
+    5:"May",
+    6:"Jun",
+    7:"Jul",
+    8:"Aug",
+    9:"Sep",
+    10:"Oct",
+    11:"Nov",
+    12:"Dec"
+}
+
+max_month = int(
+    filtered_df["Month Number"].max()
+)
+
+report_df = pd.DataFrame(
+    index=sales_pivot.index
+)
+
+# Jan Sales first
+report_df["Jan Sales"] = sales_pivot[1]
+
+for m in range(2, max_month + 1):
+
+    report_df[
+        f"{month_names[m]} Sales"
+    ] = sales_pivot[m]
+
+    previous_month = sales_pivot[m-1]
+
+    growth = (
+        (sales_pivot[m] - previous_month)
+        /
+        previous_month.replace(
+            0,
+            float("nan")
+        )
+    ) * 100
+
+    report_df[
+        f"{month_names[m]} Growth %"
+    ] = pd.to_numeric(
+        growth,
+        errors="coerce"
+    ).round(1)
+
+report_df["Total (Euro)"] = (
+    sales_pivot.sum(axis=1)
+)
+
+# Grand Total Row
+
+total_row = {}
+
+for col in report_df.columns:
+
+    if "Growth" in col:
+
+        month_name = col.replace(
+            " Growth %",
+            ""
+        )
+
+        month_num = None
+
+        for k, v in month_names.items():
+
+            if v == month_name:
+                month_num = k
+                break
+
+        if month_num and month_num > 1:
+
+            prev_total = sales_pivot[
+                month_num - 1
+            ].sum()
+
+            curr_total = sales_pivot[
+                month_num
+            ].sum()
+
+            if prev_total != 0:
+
+                total_row[col] = round(
+                    (
+                        (curr_total - prev_total)
+                        / prev_total
+                    ) * 100,
+                    1
+                )
+
+            else:
+                total_row[col] = ""
+
+        else:
+            total_row[col] = ""
+
+    else:
+
+        total_row[col] = report_df[
+            col
+        ].sum()
+
+
+
+# Sort branches first
+
+report_df = report_df.sort_values(
+    "Total (Euro)",
+    ascending=False
+)
+
+# Add TOTAL row after sorting
+
+report_df = report_df.sort_values(
+    "Total (Euro)",
+    ascending=False
+)
+
+report_df.loc["TOTAL"] = total_row
+
+# ==========================
+# MATRIX VIEW FILTER
+# ==========================
+
+view_mode = st.radio(
+    "View",
+    [
+        "Top 10",
+        "Top 20",
+        "All Branches"
+    ],
+    horizontal=True,
+    index=1
+)
+
+if view_mode == "Top 10":
+
+    top_rows = report_df.drop(
+        "TOTAL",
+        errors="ignore"
+    ).head(10)
+
+    report_df_display = pd.concat(
+        [
+            top_rows,
+            report_df.loc[["TOTAL"]]
+        ]
+    )
+
+elif view_mode == "Top 20":
+
+    top_rows = report_df.drop(
+        "TOTAL",
+        errors="ignore"
+    ).head(20)
+
+    report_df_display = pd.concat(
+        [
+            top_rows,
+            report_df.loc[["TOTAL"]]
+        ]
+    )
+
+else:
+
+    report_df_display = report_df
+
+display_df = report_df_display.copy()
+
+# ==========================
+# COLUMN LISTS
+# ==========================
+
+sales_cols = [
+    col
+    for col in report_df.columns
+    if "Sales" in col
+    or col == "Total (Euro)"
+]
+
+growth_cols = [
+    col
+    for col in report_df.columns
+    if "Growth" in col
+]
+
+# Format sales columns
+
+for col in sales_cols:
+
+    if col == "Total (Euro)":
+
+        display_df[col] = (
+            pd.to_numeric(
+                display_df[col],
+                errors="coerce"
+            )
+            .fillna(0)
+            .apply(
+                lambda x: f"{x:,.0f}"
+            )
+        )
+
+    else:
+
+        display_df[col] = (
+            pd.to_numeric(
+                display_df[col],
+                errors="coerce"
+            )
+            .fillna(0)
+            .apply(
+                lambda x: f"{x:,.0f}"
+            )
+        )
+
+# Format growth columns
+
+for col in growth_cols:
+
+    display_df[col] = (
+        pd.to_numeric(
+            display_df[col],
+            errors="coerce"
+        )
+        .apply(
+            lambda x:
+            "-"
+            if pd.isna(x)
+            else f"{x:.1f}%"
+        )
+    )
+
+def growth_color(val):
+
+    try:
+
+        if val == "-":
+            return ""
+
+        num = float(
+            str(val)
+            .replace("%","")
+        )
+
+        if num > 0:
+            return (
+                "background-color:"
+                "#c6efce;"
+                "color:#006100;"
+            )
+
+        if num < 0:
+            return (
+                "background-color:"
+                "#ffc7ce;"
+                "color:#9c0006;"
+            )
+
+    except:
+        pass
+
+    return ""
+
+def total_row_style(row):
+
+    if row.name == "TOTAL":
+
+        return [
+            "background-color:#0b2e59;color:white;font-weight:bold"
+        ] * len(row)
+
+    return [""] * len(row)
+
+
+
+
+styled_df = (
+    display_df.style
+    .applymap(
+        growth_color,
+        subset=growth_cols
+    )
+    .apply(
+        total_row_style,
+        axis=1
+    )
+)
+
+st.dataframe(
+    styled_df,
+    use_container_width=False,
+    height=700
+)
+
+
+
+
 
 # ==========================
 # BRANCH WISE DETAIL
@@ -1066,7 +1397,7 @@ if not pdf_mode:
 
     branch_table["Sale (€)"] = (
         branch_table["Sale (€)"]
-        .apply(lambda x: f"€{x:,.0f}")
+        .apply(lambda x: f"{x:,.0f}")
     )
 
     csv = branch_table.to_csv(index=False)
