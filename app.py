@@ -1377,6 +1377,131 @@ st.dataframe(
 )
 
 
+# ==========================
+# EXCEL EXPORT
+# ==========================
+
+def create_matrix_excel(export_df):
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Branch Matrix"
+
+    # Headers
+    for col_num, col_name in enumerate(export_df.columns, 1):
+
+        cell = ws.cell(
+            row=1,
+            column=col_num + 1
+        )
+
+        cell.value = col_name
+        cell.fill = PatternFill(
+            "solid",
+            fgColor="1F4E78"
+        )
+
+        cell.font = Font(
+            color="FFFFFF",
+            bold=True
+        )
+
+    # Branch names
+    for row_num, idx in enumerate(
+        export_df.index,
+        2
+    ):
+
+        ws.cell(
+            row=row_num,
+            column=1
+        ).value = idx
+
+    # Data
+    for row_num, (_, row) in enumerate(
+        export_df.iterrows(),
+        2
+    ):
+
+        for col_num, value in enumerate(
+            row,
+            2
+        ):
+
+            cell = ws.cell(
+                row=row_num,
+                column=col_num
+            )
+
+            cell.value = value
+
+            # Growth colors
+            if "Growth" in export_df.columns[
+                col_num - 2
+            ]:
+
+                try:
+
+                    num = float(
+                        str(value)
+                        .replace("%", "")
+                    )
+
+                    if num > 0:
+
+                        cell.fill = PatternFill(
+                            "solid",
+                            fgColor="C6EFCE"
+                        )
+
+                    elif num < 0:
+
+                        cell.fill = PatternFill(
+                            "solid",
+                            fgColor="FFC7CE"
+                        )
+
+                except:
+                    pass
+
+    # TOTAL row
+    for row in ws.iter_rows():
+
+        if row[0].value == "TOTAL":
+
+            for cell in row:
+
+                cell.fill = PatternFill(
+                    "solid",
+                    fgColor="0B2E59"
+                )
+
+                cell.font = Font(
+                    color="FFFFFF",
+                    bold=True
+                )
+
+    ws.freeze_panes = "B2"
+
+    excel_file = BytesIO()
+
+    wb.save(excel_file)
+
+    excel_file.seek(0)
+
+    return excel_file
+
+
+excel_data = create_matrix_excel(
+    display_df
+)
+
+st.download_button(
+    "📥 Download Matrix Report",
+    data=excel_data,
+    file_name="Branch_Performance_Matrix.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
 
 
 
