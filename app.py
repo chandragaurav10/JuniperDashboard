@@ -1357,7 +1357,7 @@ def total_row_style(row):
 
 styled_df = (
     display_df.style
-    .applymap(
+    .map(
         growth_color,
         subset=growth_cols
     )
@@ -1366,7 +1366,6 @@ styled_df = (
         axis=1
     )
 )
-
 st.dataframe(
     styled_df,
     use_container_width=False,
