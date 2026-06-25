@@ -1797,23 +1797,19 @@ styled_df = (
     )
 )
 
-if report_type == "ALL":
-    st.markdown(
-        "<h3 style='color:#1F4E78;'>📘 TOTAL SALES REPORT</h3>",
-        unsafe_allow_html=True
-    )
-
-elif report_type == "HQ":
+if report_type == "HQ":
     st.markdown(
         "<h3 style='color:#548235;'>🟩 HQ SALES REPORT</h3>",
         unsafe_allow_html=True
     )
 
-else:
+elif report_type == "B2B":
     st.markdown(
         "<h3 style='color:#C55A11;'>🟧 B2B SALES REPORT</h3>",
         unsafe_allow_html=True
     )
+
+# ALL report -> No title
 
 st.dataframe(
     styled_df,
