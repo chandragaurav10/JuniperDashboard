@@ -3,10 +3,18 @@ import os
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import matplotlib
 
 from io import BytesIO
 from openpyxl import Workbook
-from openpyxl.styles import PatternFill, Font
+from openpyxl.styles import (
+    PatternFill,
+    Font,
+    Border,
+    Side
+)
+from openpyxl.styles import Border, Side
+from openpyxl.utils import get_column_letter
 
 
 from selenium import webdriver
@@ -85,20 +93,48 @@ st.set_page_config(
     page_icon="📈",
     layout="wide"
 )
+st.markdown("""
+<style>
+
+[data-testid="stSidebar"]{
+    background:#f8fafc;
+    border-right:2px solid #e5e7eb;
+}
+
+.stMultiSelect div[data-baseweb="select"]{
+    border-radius:12px;
+}
+
+.stSelectbox div[data-baseweb="select"]{
+    border-radius:12px;
+}
+
+.stDateInput{
+    border-radius:12px;
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 pdf_mode = st.query_params.get("pdf", "0") == "1"
 if pdf_mode:
     st.markdown("""
     <style>
 
-    section.main > div {
-        max-width: 100% !important;
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
+    section.main > div{
+        max-width:100% !important;
+        padding-left:1rem !important;
+        padding-right:1rem !important;
     }
 
     [data-testid="stSidebar"]{
         display:none !important;
+    }
+
+    .pdf-page{
+        page-break-after: always;
+        break-after: page;
+        min-height:100vh;
     }
 
     </style>
@@ -163,9 +199,18 @@ df["Date Convert"] = pd.to_datetime(df["Date Convert"], errors="coerce")
 # ==========================
 
 st.sidebar.markdown("""
-# 🎛 Dashboard Filters
----
-""")
+<div style="
+background: linear-gradient(135deg,#1e293b,#334155);
+padding:15px;
+border-radius:12px;
+margin-bottom:15px;
+text-align:center;
+">
+<h2 style="color:white;margin:0;">
+🎛 Dashboard Filters
+</h2>
+</div>
+""", unsafe_allow_html=True)
 
 selected_branch = st.sidebar.multiselect(
     "Branch",
@@ -379,6 +424,9 @@ if not pdf_mode:
 # HEADER
 # ==========================
 
+if pdf_mode:
+    st.markdown('<div class="pdf-page">', unsafe_allow_html=True)
+    
 st.title("📈 Juniper Sales Dashboard")
 
 st.markdown("""
@@ -546,6 +594,9 @@ st.plotly_chart(
     
 )
 
+if pdf_mode:
+    st.markdown("</div>", unsafe_allow_html=True)
+
 agency_sale = (
     filtered_df.groupby("Agency Type")["Sale (€)"]
     .sum()
@@ -616,6 +667,9 @@ fig_branch.update_yaxes(
 # ==========================
 # BRANCH & AGENCY SALE
 # ==========================
+
+if pdf_mode:
+    st.markdown('<div class="pdf-page">', unsafe_allow_html=True)
 
 st.markdown("## 🧭 Branch & Agency Sale")
 
@@ -717,6 +771,9 @@ with col2:
         "🔴 HQ Sale",
         f"€{hq_sale:,.0f}"
     )
+
+if pdf_mode:
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 
@@ -1047,6 +1104,376 @@ st.plotly_chart(
 )
 
 
+# ==========================
+# BRANCH Daily Sale MATRIX
+# ==========================
+
+st.markdown("---")
+st.markdown("## 📊 Daily Sales Report")
+
+months = sorted(
+    df["Month Number"]
+    .dropna()
+    .unique()
+)
+current_month = datetime.today().month
+
+default_index = (
+    months.index(current_month)
+    if current_month in months
+    else 0
+)
+
+col1, col2, col3 = st.columns([5,1,6])
+
+with col1:
+    report_type = st.radio(
+        "Report Type",
+        ["ALL", "HQ", "B2B"],
+        horizontal=True,
+        key="daily_sales_report"
+    )
+
+with col2:
+    selected_month = st.selectbox(
+        "Month",
+        months,
+        index=default_index
+    )
+
+
+# Filter Data Frame based on report type
+monthly_df = filtered_df.copy()
+
+monthly_df = monthly_df[
+    monthly_df["Month Number"] == selected_month
+]
+
+if report_type == "HQ":
+    monthly_df = monthly_df[
+        monthly_df["Agency Type"] == "HQ"
+    ]
+
+elif report_type == "B2B":
+    monthly_df = monthly_df[
+        monthly_df["Agency Type"] == "B2B"
+    ]
+
+
+
+# MONTH FILTER
+monthly_df = monthly_df[
+    monthly_df["Month Number"] == selected_month
+]
+
+
+# Branch Short Name
+
+branch_short = {
+    "STTS ALA": "ALA",
+    "STTS SVO": "SVO",
+    "STTS AMM": "AMM",
+    "STTS MAD": "MAD",
+    "STTS CMN": "CMN",
+    "STTS CDG": "CDG",
+    "STTS DKR": "DKR",
+    "STTS DOH": "DOH",
+    "STTS BAH": "BAH",
+    "STTS RUH": "RUH",
+    "STTS CAN": "CAN",
+    "STTS RAI": "RAI",
+    "STTS KWI": "KWI",
+    "STTS KBP": "KBP",
+    "STTS ABJ": "ABJ",
+    "STTS CKY": "CKY",
+    "STTS OUA": "OUA",
+    "STTS MCT": "MCT",
+    "STTS TLV": "TLV",
+    "STTS BEY": "BEY",
+    "STTS UZK": "UZK",
+    "STTS ACC": "ACC",
+    "STTS BKO": "BKO",
+    "STTS NDJ": "NDJ",
+    "STTS NKC": "NKC",
+    "STTS NIM": "NIM",
+    "STTS FNA": "FNA",
+    "STTS FRU": "FRU",
+    "STTS LFW": "LFW",
+    "STTS BJL": "BJL",
+    "STTS CMB": "CMB",
+    "STTS KTM": "KTM",
+    "STTS IND": "IND",
+}
+
+monthly_df["Branch Name"] = (
+    monthly_df["Branch Name"]
+    .replace(branch_short)
+)
+
+#Create Pivot
+
+monthly_report = pd.pivot_table(
+    monthly_df,
+    index="Date Convert",
+    columns="Branch Name",
+    values="Sale (€)",
+    aggfunc="sum",
+    fill_value=0
+)
+monthly_report.index = pd.to_datetime(monthly_report.index)
+monthly_report.index = (
+    pd.to_datetime(monthly_report.index)
+    .strftime("%d-%b")
+    .str.lstrip("0")
+)
+monthly_report.index.name = "DATE"
+
+# Docs Column
+
+docs = (
+    monthly_df
+    .assign(
+        DATE=monthly_df["Date Convert"]
+            .dt.strftime("%d-%b")
+            .str.lstrip("0")
+    )
+    .groupby("DATE")
+    .size()
+)
+
+monthly_report["Docs"] = docs.reindex(
+    monthly_report.index,
+    fill_value=0
+)
+
+# TOTAL
+
+# Remove all zero columns
+
+monthly_report = monthly_report.loc[
+    :,
+    (monthly_report != 0).any(axis=0)
+]
+
+# Recreate branch list AFTER removing zero columns
+
+branch_cols = [
+    c for c in monthly_report.columns
+    if c != "Docs"
+]
+
+# Sort branches by total sales
+
+branch_totals = monthly_report[branch_cols].sum()
+
+sorted_branches = (
+    branch_totals
+    .sort_values(ascending=False)
+    .index
+    .tolist()
+)
+
+
+monthly_report = monthly_report[
+    sorted_branches
+    + ["Docs"]
+]
+
+
+monthly_report["TOTAL"] = (
+    monthly_report[branch_cols]
+    .sum(axis=1)
+)
+branch_cols = [
+    c for c in monthly_report.columns
+    if c != "Docs"
+]
+
+# TOTAL Row
+
+monthly_report.loc["TOTAL"] = (
+    monthly_report.sum()
+)
+monthly_report.loc["TOTAL", "Docs"] = monthly_report["Docs"].sum()
+
+display_df = monthly_report.copy()
+
+display_df = display_df.round(0)
+
+display_df = display_df.fillna(0)
+
+#display_df = display_df.astype(int)
+
+# -------------------------
+# Theme Colors
+# -------------------------
+
+if report_type == "ALL":
+    header_color = "#215C98"
+    data_color   = "#DAE9F8"
+    date_color   = "#DAE9F8"
+
+elif report_type == "HQ":
+    header_color = "#3C7D22"
+    data_color   = "#DAF2D0"
+    date_color   = "#B5E6A2"
+
+else:   # B2B
+    header_color = "#BE5014"
+    data_color   = "#F1A983"
+    date_color   = "#F1A983"
+
+#st.write(report_type)
+#st.write(header_color)
+#st.write(data_color)
+#st.write(date_color)
+
+styled_report = (
+    display_df.style
+
+    # Number Format
+    .format("{:,.0f}")
+
+    # Entire data area
+    .set_properties(**{
+        "background-color": data_color,
+        "border": "0.8px solid #404040",
+        "color": "black",
+        "text-align": "center"
+    })
+
+    # Docs & TOTAL column bold
+    .set_properties(
+        subset=["Docs", "TOTAL"],
+        **{
+            "font-weight": "bold"
+        }
+    )
+
+    # Header + Index + TOTAL
+    .set_table_styles([
+
+        # Column Headers
+        {
+            "selector": "th.col_heading",
+            "props": [
+                ("background-color", header_color),
+                ("color", "white"),
+                ("font-weight", "bold"),
+                ("border", "1px solid black")
+            ]
+        },
+
+        # DATE column (index)
+        {
+            "selector": "th.row_heading",
+            "props": [
+                ("background-color", date_color),
+                ("color", "black"),
+                ("font-weight", "normal"),
+                ("border", "1px solid black")
+            ]
+        },
+
+        # Top Left Cell
+        {
+            "selector": "th.blank",
+            "props": [
+                ("background-color", header_color),
+                ("color", "white"),
+                ("font-weight", "bold"),
+                ("border", "1px solid black")
+            ]
+        }
+
+    ])
+
+    # TOTAL Row
+    .apply(
+        lambda row: [
+            (
+                f"background-color:{header_color};"
+                "color:white;"
+                "font-weight:bold;"
+                "border:1px solid black;"
+            )
+            if row.name == "TOTAL"
+            else ""
+            for _ in row
+        ],
+        axis=1
+    )
+    .apply_index(
+        lambda x: [
+            (
+                f"background-color:{header_color};"
+                "color:white;"
+                "font-weight:bold;"
+                "border:1px solid black;"
+            )
+            if v == "TOTAL"
+            else (
+                f"background-color:{date_color};"
+                "color:black;"
+                "font-weight:normal;"
+                "border:1px solid black;"
+            )
+            for v in x
+        ],
+        axis=0
+    )
+    .set_table_styles([
+        {
+            "selector": "th.row_heading.level0",
+            "props": [
+                ("background-color", date_color),
+                ("color", "black"),
+                ("font-weight", "normal"),
+                ("border", "1px solid black")
+            ]
+        }
+    ], overwrite=False)
+
+    # Docs & TOTAL column bold
+    .applymap(
+        lambda x: "font-weight:bold;",
+        subset=["Docs", "TOTAL"]
+    )
+)
+
+#from streamlit.components.v1 import html
+#
+#display_df = monthly_report.reset_index()
+#
+#display_df.rename(
+#    columns={"index": "DATE"},
+#    inplace=True
+#)
+#
+#html(
+#    render_html_table(
+#        display_df,
+#        report_type
+#    ),
+#    height=900,
+#    scrolling=True
+#)
+
+
+#st.dataframe(
+#    styled_report,
+##    use_container_width=True,
+#    height=650
+#)
+
+
+display_df = monthly_report.copy()
+display_df.index.name = ""
+
+display_df = display_df.reset_index()
+display_df.rename(columns={"index": "DATE"}, inplace=True)
+st.table(styled_report)
+
 
 # ==========================
 # BRANCH PERFORMANCE MATRIX
@@ -1131,7 +1558,7 @@ report_df["Total (Euro)"] = (
     sales_pivot.sum(axis=1)
 )
 
-# Grand Total Row
+# TOTAL Row
 
 total_row = {}
 
@@ -1214,7 +1641,8 @@ view_mode = st.radio(
         "All Branches"
     ],
     horizontal=True,
-    index=1
+    index=1,
+    key="matrix_view"
 )
 
 if view_mode == "Top 10":
@@ -1357,8 +1785,6 @@ def total_row_style(row):
     return [""] * len(row)
 
 
-
-
 styled_df = (
     display_df.style
     .map(
@@ -1370,12 +1796,30 @@ styled_df = (
         axis=1
     )
 )
+
+if report_type == "ALL":
+    st.markdown(
+        "<h3 style='color:#1F4E78;'>📘 TOTAL SALES REPORT</h3>",
+        unsafe_allow_html=True
+    )
+
+elif report_type == "HQ":
+    st.markdown(
+        "<h3 style='color:#548235;'>🟩 HQ SALES REPORT</h3>",
+        unsafe_allow_html=True
+    )
+
+else:
+    st.markdown(
+        "<h3 style='color:#C55A11;'>🟧 B2B SALES REPORT</h3>",
+        unsafe_allow_html=True
+    )
+
 st.dataframe(
     styled_df,
     use_container_width=False,
     height=700
 )
-
 
 # ==========================
 # EXCEL EXPORT
@@ -1396,10 +1840,23 @@ def create_matrix_excel(export_df):
         )
 
         cell.value = col_name
-        cell.fill = PatternFill(
+
+        # Header Color
+        if report_type == "ALL":
+            header_color = "1F4E78"      # Blue
+
+        elif report_type == "HQ":  
+            header_color = "548235"      # Green
+
+        else:
+            header_color = "C55A11"      # Orange  
+
+        cell.fill = PatternFill(   
             "solid",
-            fgColor="1F4E78"
+            fgColor=header_color
         )
+
+
 
         cell.font = Font(
             color="FFFFFF",
@@ -1433,7 +1890,32 @@ def create_matrix_excel(export_df):
                 column=col_num
             )
 
-            cell.value = value
+            # Data Row Color
+            if report_type == "ALL":
+                row_color = "DCE6F1"      # Light Blue
+
+            elif report_type == "HQ":
+                row_color = "E2F0D9"      # Light Green
+
+            else:
+                row_color = "FCE4D6"      # Light Orange
+
+            cell.fill = PatternFill(
+                "solid",
+                fgColor=row_color
+            )       
+
+            
+            if value == 0:
+                    cell.value = "-"
+
+            elif isinstance(value, (int, float)): 
+                cell.value = round(value)
+                cell.number_format = '#,##0'
+            else:
+                cell.value = value
+    
+
 
             # Growth colors
             if "Growth" in export_df.columns[
@@ -1473,7 +1955,7 @@ def create_matrix_excel(export_df):
 
                 cell.fill = PatternFill(
                     "solid",
-                    fgColor="0B2E59"
+                    fgColor=header_color
                 )
 
                 cell.font = Font(
@@ -1483,6 +1965,54 @@ def create_matrix_excel(export_df):
 
     ws.freeze_panes = "B2"
 
+    # Border for all cells
+    thin = Side(
+        style="thin",
+        color="D9D9D9"
+    )
+
+    border = Border(
+        left=thin,
+        right=thin,
+        top=thin,
+        bottom=thin
+    )
+    for row in ws.iter_rows():
+        for cell in row:
+            cell.border = border
+
+
+    # Make TOTAL column bold
+    grand_total_col = ws.max_column
+    for row in range(2, ws.max_row + 1):
+        ws.cell(
+            row=row,
+            column=grand_total_col).font = Font(
+                bold=True
+            )
+        
+    # Make DATE column bold
+
+    for row in range(2, ws.max_row + 1):
+        ws.cell(
+        row=row,
+        column=1
+    ).font = Font(
+        bold=True
+    )
+
+    for column in ws.columns:
+        length = 0
+        letter = get_column_letter(column[0].column)
+
+        for cell in column:
+            try:
+                length = max(length, len(str(cell.value)))
+            except:
+                pass
+
+        ws.column_dimensions[letter].width = length + 3
+
     excel_file = BytesIO()
 
     wb.save(excel_file)
@@ -1490,7 +2020,6 @@ def create_matrix_excel(export_df):
     excel_file.seek(0)
 
     return excel_file
-
 
 excel_data = create_matrix_excel(
     display_df
@@ -1502,8 +2031,6 @@ st.download_button(
     file_name="Branch_Performance_Matrix.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
-
-
 
 # ==========================
 # BRANCH WISE DETAIL
