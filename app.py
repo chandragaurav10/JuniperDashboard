@@ -1435,7 +1435,7 @@ styled_report = (
     ], overwrite=False)
 
     # Docs & TOTAL column bold
-    .applymap(
+    .map(
         lambda x: "font-weight:bold;",
         subset=["Docs", "TOTAL"]
     )
