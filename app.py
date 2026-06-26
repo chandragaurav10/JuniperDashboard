@@ -1203,6 +1203,7 @@ branch_short = {
     "STTS CMB": "CMB",
     "STTS KTM": "KTM",
     "STTS IND": "IND",
+    "STTS ALG": "ALG",
 }
 
 monthly_df["Branch Name"] = (
