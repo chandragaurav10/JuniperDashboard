@@ -69,6 +69,7 @@ st.write(df["Date Convert"].head(20))
 
 converted = pd.to_datetime(
     df["Date Convert"],
+    dayfirst=True,
     errors="coerce"
 )
 
