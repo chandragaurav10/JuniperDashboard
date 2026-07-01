@@ -64,6 +64,10 @@ data = worksheet.get_all_records()
 
 df = pd.DataFrame(data)
 
+st.write(df.columns.tolist())
+st.write(df["Date Convert"].head(10))
+st.stop()
+
 df.columns = df.columns.str.strip()
 
 df["Agency Type"] = (
@@ -234,8 +238,14 @@ df["Date Convert"] = pd.to_datetime(
     errors="coerce"
 )
 
-min_date = df["Date Convert"].min().date()
-max_date = df["Date Convert"].max().date()
+valid_dates = df["Date Convert"].dropna()
+
+if valid_dates.empty:
+    st.error("No valid dates found in 'Date Convert' column.")
+    st.stop()
+
+min_date = valid_dates.min().date()
+max_date = valid_dates.max().date()
 
 from_date = st.sidebar.date_input(
     "From Date",
