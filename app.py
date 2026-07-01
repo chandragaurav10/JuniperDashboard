@@ -210,7 +210,11 @@ df["Month Number"] = pd.to_numeric(df["Month Number"], errors="coerce")
 # KPIs
 # ==========================
 
-df["Date Convert"] = pd.to_datetime(df["Date Convert"], errors="coerce")
+df["Date Convert"] = pd.to_datetime(
+    df["Date Convert"],
+    dayfirst=True,
+    errors="coerce"
+)
 
 # ==========================
 # SIDEBAR FILTERS
@@ -249,6 +253,7 @@ st.sidebar.markdown("### 📅 Date Range")
 
 df["Date Convert"] = pd.to_datetime(
     df["Date Convert"],
+    dayfirst=True,
     errors="coerce"
 )
 
@@ -323,6 +328,7 @@ import datetime
 # Convert safely
 df["Date Convert"] = pd.to_datetime(
     df["Date Convert"],
+    dayfirst=True,
     errors="coerce"
 )
 # Remove invalid dates
