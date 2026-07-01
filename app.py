@@ -63,22 +63,7 @@ worksheet = sheet.worksheet("Sales Data Non-Air 2026")
 data = worksheet.get_all_records()
 
 df = pd.DataFrame(data)
-st.write("Rows:", len(df))
 
-st.write(df["Date Convert"].head(20))
-
-converted = pd.to_datetime(
-    df["Date Convert"],
-    dayfirst=True,
-    errors="coerce"
-)
-
-st.write("Valid Dates:", converted.notna().sum())
-st.write("Invalid Dates:", converted.isna().sum())
-
-st.write(converted.head(20))
-
-st.stop()
 
 
 
