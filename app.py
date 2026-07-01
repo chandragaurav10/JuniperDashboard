@@ -296,7 +296,17 @@ import datetime
 
 # KPI values from COMPLETE sheet
 
-latest_date = df["Date Convert"].dt.date.max()
+# Convert safely
+df["Date Convert"] = pd.to_datetime(
+    df["Date Convert"],
+    errors="coerce"
+)
+# Remove invalid dates
+valid_dates = df["Date Convert"].dropna()
+if valid_dates.empty:
+    latest_date = None
+else:
+    latest_date = valid_dates.dt.date.max()
 
 # Last Day Sale = yesterday
 yesterday = datetime.date.today() - datetime.timedelta(days=1)
