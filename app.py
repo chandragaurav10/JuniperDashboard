@@ -1394,6 +1394,9 @@ else:   # B2B
 #st.write(data_color)
 #st.write(date_color)
 
+st.write(display_df.columns.tolist())
+st.write(display_df.head())
+
 styled_report = (
     display_df.style
 
