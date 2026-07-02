@@ -88,6 +88,18 @@ df["Branch Name"] = (
 )
 
 # ==========================
+# BOOKING STATUS
+# ==========================
+
+df["Booking Status"] = (
+    df["Booking Status"]
+    .astype(str)
+    .str.strip()
+    .replace("", "Unknown")
+    .fillna("Unknown")
+)
+
+# ==========================
 # PAGE CONFIG
 # ==========================
 
@@ -282,13 +294,28 @@ selected_destination = st.sidebar.selectbox(
     ["All Destinations"] + destination_list
 )
 
+# ==========================
+# BOOKING STATUS FILTER
+# ==========================
 
+st.sidebar.markdown("### 📌 Booking Status")
+
+booking_status = st.sidebar.multiselect(
+    "Booking Status",
+    options=sorted(df["Booking Status"].unique()),
+    default=sorted(df["Booking Status"].unique())
+)
 
 agency_filter = st.session_state.get("agency_filter", "All")
 
 filtered_df = df[
     df["Month Number"].isin(month)
 ]
+
+if booking_status:
+    filtered_df = filtered_df[
+        filtered_df["Booking Status"].isin(booking_status)
+    ]
 
 if agency_filter != "All":
     filtered_df = filtered_df[
@@ -299,6 +326,9 @@ if selected_branch:
     filtered_df = filtered_df[
         filtered_df["Branch Name"].isin(selected_branch)
     ]
+
+# Remove invalid dates before applying date filter
+filtered_df = filtered_df.dropna(subset=["Date Convert"])
 
 filtered_df = filtered_df[
     (filtered_df["Date Convert"].dt.date >= from_date)
@@ -897,6 +927,7 @@ destination_df["Room Nights"] = (
 st.markdown("## 🏨 Top 10 Hotels by Total Room Nights")
 
 # Calculate Room Nights
+filtered_df = filtered_df.copy()
 filtered_df["Room Nights"] = (
     pd.to_numeric(
         filtered_df["No. of nights"],
@@ -1306,13 +1337,10 @@ monthly_report = monthly_report[
 ]
 
 
-monthly_report["TOTAL"] = (
-    monthly_report[branch_cols]
-    .sum(axis=1)
-)
 branch_cols = [
-    c for c in monthly_report.columns
-    if c != "Docs"
+    c
+    for c in monthly_report.columns
+    if c not in ["Docs", "TOTAL"]
 ]
 
 # TOTAL Row
