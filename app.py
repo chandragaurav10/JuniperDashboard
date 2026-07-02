@@ -1358,10 +1358,7 @@ monthly_report.loc["TOTAL", "Docs"] = monthly_report.loc[
 # Fix TOTAL column
 monthly_report.loc["TOTAL", "TOTAL"] = monthly_report.loc[
     monthly_report.index != "TOTAL",
-    branch_cols
-].sum(axis=1).sum() + monthly_report.loc[
-    monthly_report.index != "TOTAL",
-    "Docs"
+    "TOTAL"
 ].sum()
 
 display_df = monthly_report.copy()
