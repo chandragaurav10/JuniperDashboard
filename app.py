@@ -1302,7 +1302,7 @@ monthly_report["Docs"] = docs.reindex(
     monthly_report.index,
     fill_value=0
 )
-monthly_report["TOTAL"] = monthly_report.sum(axis=1)
+
 
 # TOTAL
 
@@ -1334,10 +1334,12 @@ sorted_branches = (
 
 monthly_report = monthly_report[
     sorted_branches
-    + ["Docs", "TOTAL"]
+    + ["Docs"]
 ]
 
-print(monthly_report.columns.tolist())
+monthly_report["TOTAL"] = monthly_report[sorted_branches].sum(axis=1)
+
+
 branch_cols = [
     c
     for c in monthly_report.columns
@@ -1393,9 +1395,6 @@ else:   # B2B
 #st.write(header_color)
 #st.write(data_color)
 #st.write(date_color)
-
-st.write(display_df.columns.tolist())
-st.write(display_df.head())
 
 styled_report = (
     display_df.style
