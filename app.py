@@ -1398,7 +1398,7 @@ styled_report = (
 
     # Docs & TOTAL column bold
     .set_properties(
-        subset=["Docs", "TOTAL"],
+        subset=["Docs"],
         **{
             "font-weight": "bold"
         }
@@ -1491,7 +1491,7 @@ styled_report = (
     # Docs & TOTAL column bold
     .map(
         lambda x: "font-weight:bold;",
-        subset=["Docs", "TOTAL"]
+        subset=["Docs"]
     )
 )
 
