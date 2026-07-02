@@ -1337,7 +1337,7 @@ monthly_report = monthly_report[
     + ["Docs", "TOTAL"]
 ]
 
-
+print(monthly_report.columns.tolist())
 branch_cols = [
     c
     for c in monthly_report.columns
