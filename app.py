@@ -1302,6 +1302,7 @@ monthly_report["Docs"] = docs.reindex(
     monthly_report.index,
     fill_value=0
 )
+monthly_report["TOTAL"] = monthly_report.sum(axis=1)
 
 # TOTAL
 
@@ -1333,7 +1334,7 @@ sorted_branches = (
 
 monthly_report = monthly_report[
     sorted_branches
-    + ["Docs"]
+    + ["Docs", "TOTAL"]
 ]
 
 
@@ -1344,11 +1345,22 @@ branch_cols = [
 ]
 
 # TOTAL Row
+monthly_report.loc["TOTAL"] = monthly_report.sum()
 
-monthly_report.loc["TOTAL"] = (
-    monthly_report.sum()
-)
-monthly_report.loc["TOTAL", "Docs"] = monthly_report["Docs"].sum()
+# Fix Docs total
+monthly_report.loc["TOTAL", "Docs"] = monthly_report.loc[
+    monthly_report.index != "TOTAL",
+    "Docs"
+].sum()
+
+# Fix TOTAL column
+monthly_report.loc["TOTAL", "TOTAL"] = monthly_report.loc[
+    monthly_report.index != "TOTAL",
+    branch_cols
+].sum(axis=1).sum() + monthly_report.loc[
+    monthly_report.index != "TOTAL",
+    "Docs"
+].sum()
 
 display_df = monthly_report.copy()
 
